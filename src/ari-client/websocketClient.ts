@@ -3,7 +3,14 @@ import { type IBackOffOptions, backOff } from 'exponential-backoff';
 import WebSocket from 'ws';
 import type { AriClient } from './ariClient';
 import type { BaseClient } from './baseClient.js';
-import type { WebSocketEvent, WebSocketEventType, Logger } from './interfaces';
+import type {
+  WebSocketEvent,
+  WebSocketEventType,
+  Logger,
+  WebSocketClientEvents,
+  WebSocketClientEventType,
+  WebSocketClientEventListener,
+} from './interfaces';
 
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 30;
 const DEFAULT_STARTING_DELAY = 500;
@@ -518,5 +525,26 @@ export class WebSocketClient extends EventEmitter {
 
     // Remover todos os listeners
     this.removeAllListeners();
+  }
+
+  public override on<E extends WebSocketClientEventType>(
+    event: E,
+    listener: WebSocketClientEventListener<E>
+  ): this {
+    return super.on(event, listener);
+  }
+
+  public override once<E extends WebSocketClientEventType>(
+    event: E,
+    listener: WebSocketClientEventListener<E>
+  ): this {
+    return super.once(event, listener);
+  }
+
+  public override off<E extends WebSocketClientEventType>(
+    event: E,
+    listener: WebSocketClientEventListener<E>
+  ): this {
+    return super.off(event, listener);
   }
 }
