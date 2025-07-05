@@ -96,6 +96,10 @@ export type {
 export type {
   WebSocketEvent,
   WebSocketEventType,
+  WebSocketClientEvents,
+  WebSocketClientEventType,
+  WebSocketClientEventListener,
+  WebSocketReconnectInfo,
   // Eventos individuais
   ChannelDtmfReceived,
   ChannelDialplanEvent,

@@ -67,6 +67,12 @@ export type {
   PeerStatusChange,
 } from './events.types.js';
 export type {
+  WebSocketReconnectInfo,
+  WebSocketClientEvents,
+  WebSocketClientEventType,
+  WebSocketClientEventListener,
+} from './websocket.types.js';
+export type {
   AddChannelRequest,
   RemoveChannelRequest,
   CreateBridgeRequest,

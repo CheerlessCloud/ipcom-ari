@@ -74,6 +74,27 @@ client.on('ChannelDtmfReceived', event => {
     console.log('DTMF received:', event.digit);
 });
 
+// Subscribe to WebSocket connection events
+client.on('connected', () => {
+    console.log('WebSocket connected');
+});
+
+client.on('reconnected', info => {
+    console.log('WebSocket reconnected:', info);
+});
+
+client.on('disconnected', () => {
+    console.log('WebSocket disconnected');
+});
+
+client.on('reconnectFailed', err => {
+    console.error('WebSocket reconnect failed:', err);
+});
+
+client.on('error', err => {
+    console.error('WebSocket error:', err);
+});
+
 // Close WebSocket connection
 client.closeWebSocket();
 ```
