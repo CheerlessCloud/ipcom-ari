@@ -47,4 +47,29 @@ describe('WebSocket lifecycle', () => {
     expect(server.connections()).toBe(0);
     await client.destroy();
   });
+
+  it('delivers events for listeners registered before the connection opens', async () => {
+    const client = new AriClient({
+      host: '127.0.0.1',
+      port: server.port,
+      username: 'user',
+      password: 'pass',
+    });
+
+    const received: unknown[] = [];
+
+    // Start connecting but do not await so we can register listeners early
+    const connecting = client.connectWebSocket(['app1']);
+    client.on('StasisStart', (e) => {
+      received.push(e);
+    });
+    await connecting;
+
+    server.sendEvent({ type: 'StasisStart', channel: { id: 'early' }, application: 'app1' });
+    await new Promise((r) => setTimeout(r, 150));
+
+    expect(received).toHaveLength(1);
+    await client.closeWebSocket();
+    await client.destroy();
+  });
 });

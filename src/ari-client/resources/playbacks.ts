@@ -61,7 +61,7 @@ export class PlaybackInstance {
   on<T extends WebSocketEvent['type']>(
     event: T,
     listener: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -72,7 +72,7 @@ export class PlaybackInstance {
       this.client.logger.warn(
         `Listener já registrado para evento ${event}, reutilizando.`
       );
-      return;
+      return this;
     }
 
     const wrappedListener = (data: WebSocketEvent) => {
@@ -90,6 +90,7 @@ export class PlaybackInstance {
     this.listenersMap
       .get(event)!
       .push(wrappedListener as (...args: any[]) => void);
+    return this;
   }
 
   /**
@@ -101,7 +102,7 @@ export class PlaybackInstance {
   once<T extends WebSocketEvent['type']>(
     event: T,
     listener: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -114,7 +115,7 @@ export class PlaybackInstance {
       this.client.logger.warn(
         `One-time listener já registrado para evento ${eventKey}, reutilizando.`
       );
-      return;
+      return this;
     }
 
     const wrappedListener = (data: WebSocketEvent) => {
@@ -135,6 +136,7 @@ export class PlaybackInstance {
     this.listenersMap
       .get(eventKey)!
       .push(wrappedListener as (...args: any[]) => void);
+    return this;
   }
 
   /**
@@ -146,7 +148,7 @@ export class PlaybackInstance {
   off<T extends WebSocketEvent['type']>(
     event: T,
     listener?: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -162,6 +164,7 @@ export class PlaybackInstance {
       this.eventEmitter.removeAllListeners(event);
       this.listenersMap.delete(event);
     }
+    return this;
   }
 
   /**
@@ -214,7 +217,10 @@ export class PlaybackInstance {
       return this.playbackData;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error retrieving playback data for ${this.id}:`, message);
+      this.client.logger.warn(
+        `Error retrieving playback data for ${this.id}:`,
+        message
+      );
       throw new Error(`Failed to get playback data: ${message}`);
     }
   }
@@ -238,7 +244,10 @@ export class PlaybackInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error controlling playback ${this.id}:`, message);
+      this.client.logger.warn(
+        `Error controlling playback ${this.id}:`,
+        message
+      );
       throw new Error(`Failed to control playback: ${message}`);
     }
   }
@@ -276,7 +285,9 @@ export class PlaybackInstance {
    * @returns {void} This method doesn't return a value.
    */
   removeAllListeners(): void {
-    this.client.logger.log(`Removing all event listeners for playback ${this.id}`);
+    this.client.logger.log(
+      `Removing all event listeners for playback ${this.id}`
+    );
     this.listenersMap.forEach((listeners, event) => {
       listeners.forEach((listener) => {
         this.eventEmitter.off(
@@ -349,7 +360,10 @@ export class Playbacks {
       return this.playbackInstances.get(id)!;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error creating/retrieving playback instance:`, message);
+      this.client.logger.warn(
+        `Error creating/retrieving playback instance:`,
+        message
+      );
       throw new Error(`Failed to manage playback instance: ${message}`);
     }
   }
@@ -388,16 +402,23 @@ export class Playbacks {
         if (instance) {
           instance.cleanup(); // Usar o novo método cleanup
           this.playbackInstances.delete(playbackId);
-          this.client.logger.log(`Playback instance ${playbackId} removed and cleaned up`);
+          this.client.logger.log(
+            `Playback instance ${playbackId} removed and cleaned up`
+          );
         }
       } catch (error) {
-        this.client.logger.error(`Error cleaning up playback ${playbackId}:`, error);
+        this.client.logger.error(
+          `Error cleaning up playback ${playbackId}:`,
+          error
+        );
       }
     }
 
     // Garantir que o map está vazio
     this.playbackInstances.clear();
-    this.client.logger.log('All playback instances have been removed and cleaned up');
+    this.client.logger.log(
+      'All playback instances have been removed and cleaned up'
+    );
   }
 
   /**
@@ -415,13 +436,20 @@ export class Playbacks {
       try {
         instance.cleanup();
         this.playbackInstances.delete(playbackId);
-        this.client.logger.log(`Playback instance ${playbackId} removed from memory`);
+        this.client.logger.log(
+          `Playback instance ${playbackId} removed from memory`
+        );
       } catch (error) {
-        this.client.logger.error(`Error removing playback instance ${playbackId}:`, error);
+        this.client.logger.error(
+          `Error removing playback instance ${playbackId}:`,
+          error
+        );
         throw error;
       }
     } else {
-      this.client.logger.warn(`Attempt to remove non-existent instance: ${playbackId}`);
+      this.client.logger.warn(
+        `Attempt to remove non-existent instance: ${playbackId}`
+      );
     }
   }
 
@@ -472,7 +500,10 @@ export class Playbacks {
       return await this.baseClient.get<Playback>(`/playbacks/${playbackId}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error getting playback details ${playbackId}:`, message);
+      this.client.logger.warn(
+        `Error getting playback details ${playbackId}:`,
+        message
+      );
       throw new Error(`Failed to get playback details: ${message}`);
     }
   }
@@ -496,7 +527,10 @@ export class Playbacks {
       await playback.control(operation);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error controlling playback ${playbackId}:`, message);
+      this.client.logger.warn(
+        `Error controlling playback ${playbackId}:`,
+        message
+      );
       throw new Error(`Failed to control playback: ${message}`);
     }
   }
@@ -516,7 +550,10 @@ export class Playbacks {
       await playback.stop();
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.warn(`Error stopping playback ${playbackId}:`, message);
+      this.client.logger.warn(
+        `Error stopping playback ${playbackId}:`,
+        message
+      );
       throw new Error(`Failed to stop playback: ${message}`);
     }
   }

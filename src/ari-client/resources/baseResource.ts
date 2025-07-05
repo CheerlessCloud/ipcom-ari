@@ -22,14 +22,16 @@ export abstract class BaseResource {
    * @param event O tipo de evento a escutar.
    * @param callback Função callback a ser chamada quando o evento ocorre.
    */
-  public on<T extends string>(event: T, callback: (data: any) => void): void {
+  public on<T extends string>(event: T, callback: (data: any) => void): this {
     const eventKey = `${event}-${this.resourceId}`;
 
     // 🔹 Verifica se o listener já foi adicionado
     const existingListeners = this.listenersMap.get(eventKey) || [];
     if (existingListeners.includes(callback)) {
-      this.client.logger.warn(`Listener já registrado para ${eventKey}, reutilizando.`);
-      return;
+      this.client.logger.warn(
+        `Listener já registrado para ${eventKey}, reutilizando.`
+      );
+      return this;
     }
 
     this.client.logger.log({
@@ -45,6 +47,7 @@ export abstract class BaseResource {
       this.listenersMap.set(eventKey, []);
     }
     this.listenersMap.get(eventKey)!.push(callback as (...args: any[]) => void);
+    return this;
   }
 
   /**
@@ -55,7 +58,7 @@ export abstract class BaseResource {
   public removeListener<T extends string>(
     event: T,
     callback: (data: any) => void
-  ): void {
+  ): this {
     const eventKey = `${event}-${this.resourceId}`;
 
     this.client.logger.log({
@@ -72,13 +75,14 @@ export abstract class BaseResource {
       eventKey,
       storedListeners.filter((l) => l !== callback)
     );
+    return this;
   }
 
   /**
    * Remove todos os listeners de um tipo de evento.
    * @param event O tipo de evento.
    */
-  public removeAllListeners<T extends string>(event: T): void {
+  public removeAllListeners<T extends string>(event: T): this {
     const eventKey = `${event}-${this.resourceId}`;
 
     this.client.logger.log({
@@ -89,13 +93,16 @@ export abstract class BaseResource {
 
     this.emitter.removeAllListeners(eventKey);
     this.listenersMap.delete(eventKey);
+    return this;
   }
 
   /**
    * Remove todos os listeners de todos os eventos associados a este recurso.
    */
-  public clearAllListeners(): void {
-    this.client.logger.log(`Removing all event listeners for resource ${this.resourceId}`);
+  public clearAllListeners(): this {
+    this.client.logger.log(
+      `Removing all event listeners for resource ${this.resourceId}`
+    );
 
     this.listenersMap.forEach((listeners, eventKey) => {
       listeners.forEach((listener) => {
@@ -105,6 +112,7 @@ export abstract class BaseResource {
 
     this.listenersMap.clear();
     this.emitter.removeAllListeners();
+    return this;
   }
 
   /**
@@ -112,14 +120,14 @@ export abstract class BaseResource {
    * @param event O tipo de evento.
    * @param data Os dados associados ao evento.
    */
-  public emit<T extends string>(event: T, data: any): void {
+  public emit<T extends string>(event: T, data: any): this {
     const eventKey = `${event}-${this.resourceId}`;
 
     if (!this.emitter.listenerCount(eventKey)) {
       this.client.logger.warn(
         `No listeners registered for event ${eventKey}, skipping emit.`
       );
-      return;
+      return this;
     }
 
     this.client.logger.log({
@@ -129,5 +137,6 @@ export abstract class BaseResource {
     });
 
     this.emitter.emit(eventKey, data);
+    return this;
   }
 }
