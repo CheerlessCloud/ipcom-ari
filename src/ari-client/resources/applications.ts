@@ -3,6 +3,7 @@ import type {
   Application,
   ApplicationDetails,
 } from '../interfaces/applications.types.js';
+import type { Logger } from '../interfaces/logger.types.js';
 
 export interface ApplicationMessage {
   event: string;
@@ -10,7 +11,7 @@ export interface ApplicationMessage {
 }
 
 export class Applications {
-  constructor(private client: BaseClient) {}
+  constructor(private client: BaseClient, private readonly logger: Logger) {}
 
   /**
    * Lists all applications.
@@ -41,7 +42,7 @@ export class Applications {
         `/applications/${appName}`
       );
     } catch (error) {
-      console.error(`Erro ao obter detalhes do aplicativo ${appName}:`, error);
+      this.logger.error(`Erro ao obter detalhes do aplicativo ${appName}:`, error);
       throw error;
     }
   }

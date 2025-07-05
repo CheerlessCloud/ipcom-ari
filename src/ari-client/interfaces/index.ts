@@ -1,4 +1,5 @@
 export type { AriClientConfig, AriApplication } from './requests.js';
+export type { Logger } from './logger.types.js';
 export type {
   Channel,
   OriginateRequest,

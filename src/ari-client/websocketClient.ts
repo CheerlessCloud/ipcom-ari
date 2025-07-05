@@ -3,7 +3,7 @@ import { type IBackOffOptions, backOff } from 'exponential-backoff';
 import WebSocket from 'ws';
 import type { AriClient } from './ariClient';
 import type { BaseClient } from './baseClient.js';
-import type { WebSocketEvent, WebSocketEventType } from './interfaces';
+import type { WebSocketEvent, WebSocketEventType, Logger } from './interfaces';
 
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 30;
 const DEFAULT_STARTING_DELAY = 500;
@@ -40,7 +40,7 @@ export class WebSocketClient extends EventEmitter {
    */
   private logConnectionStatus(): void {
     setInterval(() => {
-      console.log({
+      this.logger.log({
         connections: this.ws ? 1 : 0,
         state: this.getState(),
         reconnectAttempts: this.reconnectionAttempts,
@@ -77,7 +77,7 @@ export class WebSocketClient extends EventEmitter {
     jitter: 'full',
     delayFirstAttempt: false,
     retry: (error: Error, attemptNumber: number) => {
-      console.warn(
+      this.logger.warn(
         `Connection attempt #${attemptNumber} failed:`,
         error.message || 'Unknown error'
       );
@@ -102,7 +102,8 @@ export class WebSocketClient extends EventEmitter {
     private readonly baseClient: BaseClient,
     private apps: string[],
     private subscribedEvents?: WebSocketEventType[],
-    private readonly ariClient?: AriClient
+    private readonly ariClient?: AriClient,
+    private readonly logger: Logger = console,
   ) {
     super();
 
@@ -123,7 +124,7 @@ export class WebSocketClient extends EventEmitter {
    */
   public async connect(): Promise<void> {
     if (this.isConnecting || this.isConnected()) {
-      console.warn(
+      this.logger.warn(
         'WebSocket is already connecting or connected. Skipping new connection.'
       );
       return;
@@ -176,13 +177,13 @@ export class WebSocketClient extends EventEmitter {
       uniqueApps.length === this.apps.length &&
       uniqueApps.every((app) => this.apps.includes(app))
     ) {
-      console.log(
+      this.logger.log(
         'No changes in applications list, maintaining current connection'
       );
       return;
     }
 
-    console.log(
+    this.logger.log(
       `Reconnecting WebSocket with updated applications: ${uniqueApps.join(', ')}`
     );
 
@@ -204,7 +205,7 @@ export class WebSocketClient extends EventEmitter {
 
     // Reconectar com apps atualizados
     await this.connect();
-    console.log('WebSocket reconnected successfully with updated applications');
+    this.logger.log('WebSocket reconnected successfully with updated applications');
   }
 
   /**
@@ -226,7 +227,7 @@ export class WebSocketClient extends EventEmitter {
     const appsToAdd = newApps.filter((app) => !this.apps.includes(app));
 
     if (appsToAdd.length === 0) {
-      console.log('All applications are already registered');
+      this.logger.log('All applications are already registered');
       return;
     }
 
@@ -273,7 +274,7 @@ export class WebSocketClient extends EventEmitter {
 
           this.ws.once('close', (code) => {
             // 🔹 Usa `once` para evitar handlers duplicados
-            console.warn(
+            this.logger.warn(
               `WebSocket disconnected with code ${code}. Attempting to reconnect...`
             );
             if (!this.isReconnecting) {
@@ -283,7 +284,7 @@ export class WebSocketClient extends EventEmitter {
 
           this.ws.once('error', (err: Error) => {
             // 🔹 Usa `once` para evitar acúmulo de eventos
-            console.error('WebSocket error:', err.message);
+            this.logger.error('WebSocket error:', err.message);
             if (!this.isReconnecting) {
               this.reconnect(this.lastWsUrl);
             }
@@ -365,7 +366,7 @@ export class WebSocketClient extends EventEmitter {
         }, 100)
       );
     } catch (error) {
-      console.error('Error processing WebSocket message:', error);
+      this.logger.error('Error processing WebSocket message:', error);
       this.emit('error', new Error('Failed to decode WebSocket message'));
     }
   }
@@ -384,24 +385,24 @@ export class WebSocketClient extends EventEmitter {
    */
   private async reconnect(wsUrl: string): Promise<void> {
     if (!this.shouldReconnect) {
-      console.warn(
+      this.logger.warn(
         'Reconnection skipped because WebSocket was intentionally closed.'
       );
       return;
     }
 
     if (this.isReconnecting) {
-      console.warn('Já há uma tentativa de reconexão em andamento.');
+      this.logger.warn('Já há uma tentativa de reconexão em andamento.');
       return;
     }
 
     this.isReconnecting = true;
     this.reconnectionAttempts++;
-    console.log(`Tentando reconexão #${this.reconnectionAttempts}...`);
+    this.logger.log(`Tentando reconexão #${this.reconnectionAttempts}...`);
 
     backOff(() => this.initializeWebSocket(wsUrl), this.backOffOptions)
       .catch((error) => {
-        console.error(`Falha ao reconectar: ${error.message}`);
+        this.logger.error(`Falha ao reconectar: ${error.message}`);
         this.emit('reconnectFailed', error);
       })
       .finally(() => {
@@ -420,11 +421,11 @@ export class WebSocketClient extends EventEmitter {
    */
   public async close(): Promise<void> {
     if (!this.ws) {
-      console.warn('No WebSocket connection to close');
+      this.logger.warn('No WebSocket connection to close');
       return;
     }
 
-    console.log('Closing WebSocket connection.');
+    this.logger.log('Closing WebSocket connection.');
     this.shouldReconnect = false;
 
     // Limpar event queue
@@ -447,7 +448,7 @@ export class WebSocketClient extends EventEmitter {
         this.ws!.close();
       });
     } catch (error) {
-      console.error('Error closing WebSocket:', error);
+      this.logger.error('Error closing WebSocket:', error);
     } finally {
       this.ws = undefined;
       this.emit('disconnected');

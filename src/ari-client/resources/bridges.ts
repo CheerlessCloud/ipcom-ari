@@ -105,7 +105,7 @@ export class BridgeInstance {
     // 🔹 Verifica se o listener já está registrado
     const existingListeners = this.listenersMap.get(event) || [];
     if (existingListeners.includes(listener)) {
-      console.warn(
+      this.client.logger.warn(
         `Listener já registrado para evento ${event}, reutilizando.`
       );
       return;
@@ -147,7 +147,7 @@ export class BridgeInstance {
     // 🔹 Verifica se já existe um listener igual para evitar duplicação
     const existingListeners = this.listenersMap.get(eventKey) || [];
     if (existingListeners.includes(listener)) {
-      console.warn(
+      this.client.logger.warn(
         `One-time listener já registrado para evento ${eventKey}, reutilizando.`
       );
       return;
@@ -213,7 +213,7 @@ export class BridgeInstance {
     // Limpar o map de listeners
     this.listenersMap.clear();
 
-    console.log(`Bridge instance ${this.id} cleaned up`);
+    this.client.logger.log(`Bridge instance ${this.id} cleaned up`);
   }
 
   /**
@@ -223,7 +223,7 @@ export class BridgeInstance {
    */
   emitEvent(event: WebSocketEvent): void {
     if (!event) {
-      console.warn('Invalid event received');
+      this.client.logger.warn('Invalid event received');
       return;
     }
 
@@ -236,7 +236,7 @@ export class BridgeInstance {
    * Removes all event listeners from this bridge instance.
    */
   removeAllListeners(): void {
-    console.log(`Removing all event listeners for bridge ${this.id}`);
+    this.client.logger.log(`Removing all event listeners for bridge ${this.id}`);
     this.listenersMap.forEach((listeners, event) => {
       listeners.forEach((listener) => {
         this.eventEmitter.off(
@@ -268,7 +268,7 @@ export class BridgeInstance {
       return this.bridgeData;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error retrieving details for bridge ${this.id}:`, message);
+      this.client.logger.error(`Error retrieving details for bridge ${this.id}:`, message);
       throw new Error(`Failed to get bridge details: ${message}`);
     }
   }
@@ -293,7 +293,7 @@ export class BridgeInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error adding channels to bridge ${this.id}:`, message);
+      this.client.logger.error(`Error adding channels to bridge ${this.id}:`, message);
       throw new Error(`Failed to add channels: ${message}`);
     }
   }
@@ -317,7 +317,7 @@ export class BridgeInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error removing channels from bridge ${this.id}:`, message);
+      this.client.logger.error(`Error removing channels from bridge ${this.id}:`, message);
       throw new Error(`Failed to remove channels: ${message}`);
     }
   }
@@ -346,7 +346,7 @@ export class BridgeInstance {
       return result;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error playing media on bridge ${this.id}:`, message);
+      this.client.logger.error(`Error playing media on bridge ${this.id}:`, message);
       throw new Error(`Failed to play media: ${message}`);
     }
   }
@@ -364,7 +364,7 @@ export class BridgeInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error stopping playback on bridge ${this.id}:`, message);
+      this.client.logger.error(`Error stopping playback on bridge ${this.id}:`, message);
       throw new Error(`Failed to stop playback: ${message}`);
     }
   }
@@ -382,7 +382,7 @@ export class BridgeInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(
+      this.client.logger.error(
         `Error setting video source for bridge ${this.id}:`,
         message
       );
@@ -400,7 +400,7 @@ export class BridgeInstance {
       await this.baseClient.delete<void>(`/bridges/${this.id}/videoSource`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(
+      this.client.logger.error(
         `Error removing video source from bridge ${this.id}:`,
         message
       );
@@ -466,7 +466,7 @@ export class Bridges {
       return this.bridgeInstances.get(id)!;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.warn(`Error creating/retrieving bridge instance:`, message);
+      this.client.logger.warn(`Error creating/retrieving bridge instance:`, message);
       throw new Error(`Failed to manage bridge instance: ${message}`);
     }
   }
@@ -485,16 +485,16 @@ export class Bridges {
         if (instance) {
           instance.cleanup(); // Usar o novo método cleanup
           this.bridgeInstances.delete(bridgeId);
-          console.log(`Bridge instance ${bridgeId} removed and cleaned up`);
+          this.client.logger.log(`Bridge instance ${bridgeId} removed and cleaned up`);
         }
       } catch (error) {
-        console.error(`Error cleaning up bridge ${bridgeId}:`, error);
+        this.client.logger.error(`Error cleaning up bridge ${bridgeId}:`, error);
       }
     }
 
     // Garantir que o map está vazio
     this.bridgeInstances.clear();
-    console.log('All bridge instances have been removed and cleaned up');
+    this.client.logger.log('All bridge instances have been removed and cleaned up');
   }
 
   /**
@@ -517,13 +517,13 @@ export class Bridges {
       try {
         instance.cleanup();
         this.bridgeInstances.delete(bridgeId);
-        console.log(`Bridge instance ${bridgeId} removed from memory`);
+        this.client.logger.log(`Bridge instance ${bridgeId} removed from memory`);
       } catch (error) {
-        console.error(`Error removing bridge instance ${bridgeId}:`, error);
+        this.client.logger.error(`Error removing bridge instance ${bridgeId}:`, error);
         throw error;
       }
     } else {
-      console.warn(`Attempt to remove non-existent instance: ${bridgeId}`);
+      this.client.logger.warn(`Attempt to remove non-existent instance: ${bridgeId}`);
     }
   }
 
@@ -547,7 +547,7 @@ export class Bridges {
    */
   public propagateEventToBridge(event: WebSocketEvent): void {
     if (!event || !('bridge' in event) || !event.bridge?.id) {
-      console.warn('Invalid WebSocket event received');
+      this.client.logger.warn('Invalid WebSocket event received');
       return;
     }
 
@@ -564,7 +564,7 @@ export class Bridges {
         if (instance) {
           instance.emitEvent(event);
         } else {
-          console.warn(
+          this.client.logger.warn(
             `No instance found for bridge ${event.bridge!.id}. Event ignored.`
           );
         }

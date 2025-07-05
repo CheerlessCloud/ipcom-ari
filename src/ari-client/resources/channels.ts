@@ -71,7 +71,7 @@ export class ChannelInstance {
     // 🔹 Verifica se o listener já está registrado para evitar duplicação
     const existingListeners = this.listenersMap.get(event) || [];
     if (existingListeners.includes(listener)) {
-      console.warn(
+      this.client.logger.warn(
         `Listener já registrado para evento ${event}, reutilizando.`
       );
       return;
@@ -110,7 +110,7 @@ export class ChannelInstance {
     // 🔹 Verifica se já existe um listener igual para evitar duplicação
     const existingListeners = this.listenersMap.get(eventKey) || [];
     if (existingListeners.includes(listener)) {
-      console.warn(
+      this.client.logger.warn(
         `One-time listener já registrado para evento ${eventKey}, reutilizando.`
       );
       return;
@@ -180,7 +180,7 @@ export class ChannelInstance {
     // Limpar o map de listeners
     this.listenersMap.clear();
 
-    console.log(`Channel instance ${this.id} cleaned up`);
+    this.client.logger.log(`Channel instance ${this.id} cleaned up`);
   }
 
   /**
@@ -188,7 +188,7 @@ export class ChannelInstance {
    */
   emitEvent(event: WebSocketEvent): void {
     if (!event) {
-      console.warn('Received invalid event');
+      this.client.logger.warn('Received invalid event');
       return;
     }
 
@@ -204,7 +204,7 @@ export class ChannelInstance {
    * @return {void} This method does not return a value.
    */
   removeAllListeners(): void {
-    console.log(`Removing all event listeners for channel ${this.id}`);
+    this.client.logger.log(`Removing all event listeners for channel ${this.id}`);
 
     this.listenersMap.forEach((listeners, event) => {
       listeners.forEach((listener) => {
@@ -228,7 +228,7 @@ export class ChannelInstance {
       await this.baseClient.post<void>(`/channels/${this.id}/answer`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error answering channel ${this.id}:`, message);
+      this.client.logger.error(`Error answering channel ${this.id}:`, message);
       throw new Error(`Failed to answer channel: ${message}`);
     }
   }
@@ -253,7 +253,7 @@ export class ChannelInstance {
       return this.channelData;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error originating channel:`, message);
+      this.client.logger.error(`Error originating channel:`, message);
       throw new Error(`Failed to originate channel: ${message}`);
     }
   }
@@ -286,7 +286,7 @@ export class ChannelInstance {
       });
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(
+      this.client.logger.error(
         `Error continuing dialplan for channel ${this.id}:`,
         message
       );
@@ -314,7 +314,7 @@ export class ChannelInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error snooping on channel ${this.id}:`, message);
+      this.client.logger.error(`Error snooping on channel ${this.id}:`, message);
       throw new Error(`Failed to snoop channel: ${message}`);
     }
   }
@@ -339,7 +339,7 @@ export class ChannelInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error snooping with ID on channel ${this.id}:`, message);
+      this.client.logger.error(`Error snooping with ID on channel ${this.id}:`, message);
       throw new Error(`Failed to snoop channel with ID: ${message}`);
     }
   }
@@ -369,7 +369,7 @@ export class ChannelInstance {
       return playback;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error playing media on channel ${this.id}:`, message);
+      this.client.logger.error(`Error playing media on channel ${this.id}:`, message);
       throw new Error(`Failed to play media: ${message}`);
     }
   }
@@ -394,7 +394,7 @@ export class ChannelInstance {
       return details;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(
+      this.client.logger.error(
         `Error retrieving channel details for ${this.id}:`,
         message
       );
@@ -680,7 +680,7 @@ export class Channels {
       return this.channelInstances.get(id)!;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error creating/retrieving channel instance:`, message);
+      this.client.logger.error(`Error creating/retrieving channel instance:`, message);
       throw new Error(`Failed to manage channel instance: ${message}`);
     }
   }
@@ -708,16 +708,16 @@ export class Channels {
         if (instance) {
           instance.cleanup(); // Usar o novo método cleanup
           this.channelInstances.delete(channelId);
-          console.log(`Channel instance ${channelId} removed and cleaned up`);
+          this.client.logger.log(`Channel instance ${channelId} removed and cleaned up`);
         }
       } catch (error) {
-        console.error(`Error cleaning up channel ${channelId}:`, error);
+        this.client.logger.error(`Error cleaning up channel ${channelId}:`, error);
       }
     }
 
     // Garantir que o map está vazio
     this.channelInstances.clear();
-    console.log('All channel instances have been removed and cleaned up');
+    this.client.logger.log('All channel instances have been removed and cleaned up');
   }
 
   /**
@@ -736,7 +736,7 @@ export class Channels {
       return await this.baseClient.get<Channel>(`/channels/${id}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error retrieving channel details for ${id}:`, message);
+      this.client.logger.error(`Error retrieving channel details for ${id}:`, message);
       throw new Error(`Failed to get channel details: ${message}`);
     }
   }
@@ -754,13 +754,13 @@ export class Channels {
       try {
         instance.cleanup();
         this.channelInstances.delete(channelId);
-        console.log(`Channel instance ${channelId} removed from memory`);
+        this.client.logger.log(`Channel instance ${channelId} removed from memory`);
       } catch (error) {
-        console.error(`Error removing channel instance ${channelId}:`, error);
+        this.client.logger.error(`Error removing channel instance ${channelId}:`, error);
         throw error;
       }
     } else {
-      console.warn(`Attempt to remove non-existent instance: ${channelId}`);
+      this.client.logger.warn(`Attempt to remove non-existent instance: ${channelId}`);
     }
   }
 
@@ -769,7 +769,7 @@ export class Channels {
    */
   public propagateEventToChannel(event: WebSocketEvent): void {
     if (!event || !('channel' in event) || !event.channel?.id) {
-      console.warn('Invalid WebSocket event received');
+      this.client.logger.warn('Invalid WebSocket event received');
       return;
     }
 
@@ -786,7 +786,7 @@ export class Channels {
         if (instance) {
           instance.emitEvent(event);
         } else {
-          console.warn(
+          this.client.logger.warn(
             `No instance found for channel ${event.channel!.id}. Event ignored.`
           );
         }
@@ -807,7 +807,7 @@ export class Channels {
       return await this.baseClient.post<Channel>('/channels', data);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error originating channel:`, message);
+      this.client.logger.error(`Error originating channel:`, message);
       throw new Error(`Failed to originate channel: ${message}`);
     }
   }
@@ -824,7 +824,7 @@ export class Channels {
       return channels as Channel[];
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      console.error(`Error listing channels:`, message);
+      this.client.logger.error(`Error listing channels:`, message);
       throw new Error(`Failed to list channels: ${message}`);
     }
   }

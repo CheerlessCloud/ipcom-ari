@@ -28,11 +28,11 @@ export abstract class BaseResource {
     // 🔹 Verifica se o listener já foi adicionado
     const existingListeners = this.listenersMap.get(eventKey) || [];
     if (existingListeners.includes(callback)) {
-      console.warn(`Listener já registrado para ${eventKey}, reutilizando.`);
+      this.client.logger.warn(`Listener já registrado para ${eventKey}, reutilizando.`);
       return;
     }
 
-    console.log({
+    this.client.logger.log({
       baseEvent: 'on',
       event,
       name: eventKey,
@@ -58,7 +58,7 @@ export abstract class BaseResource {
   ): void {
     const eventKey = `${event}-${this.resourceId}`;
 
-    console.log({
+    this.client.logger.log({
       baseEvent: 'removeListener - baseResources',
       event,
       name: eventKey,
@@ -81,7 +81,7 @@ export abstract class BaseResource {
   public removeAllListeners<T extends string>(event: T): void {
     const eventKey = `${event}-${this.resourceId}`;
 
-    console.log({
+    this.client.logger.log({
       baseEvent: 'removeAllListeners',
       event,
       name: eventKey,
@@ -95,7 +95,7 @@ export abstract class BaseResource {
    * Remove todos os listeners de todos os eventos associados a este recurso.
    */
   public clearAllListeners(): void {
-    console.log(`Removing all event listeners for resource ${this.resourceId}`);
+    this.client.logger.log(`Removing all event listeners for resource ${this.resourceId}`);
 
     this.listenersMap.forEach((listeners, eventKey) => {
       listeners.forEach((listener) => {
@@ -116,13 +116,13 @@ export abstract class BaseResource {
     const eventKey = `${event}-${this.resourceId}`;
 
     if (!this.emitter.listenerCount(eventKey)) {
-      console.warn(
+      this.client.logger.warn(
         `No listeners registered for event ${eventKey}, skipping emit.`
       );
       return;
     }
 
-    console.log({
+    this.client.logger.log({
       baseEvent: 'emit - baseResources',
       event,
       name: eventKey,
