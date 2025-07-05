@@ -3,6 +3,7 @@ import axios, {
   type AxiosRequestConfig,
   isAxiosError,
 } from 'axios';
+import type { Logger } from './interfaces/logger.types.js';
 
 /**
  * Custom error class for HTTP-related errors
@@ -39,7 +40,8 @@ export class BaseClient {
     private readonly baseUrl: string,
     private readonly username: string,
     private readonly password: string,
-    timeout = 5000
+    timeout = 5000,
+    private readonly logger: Logger = console,
   ) {
     if (!/^https?:\/\/.+/.test(baseUrl)) {
       throw new Error(
@@ -91,7 +93,7 @@ export class BaseClient {
       },
       (error: unknown) => {
         const message = this.getErrorMessage(error);
-        console.error('[Request Error]', message);
+        this.logger.error('[Request Error]', message);
         return Promise.reject(new HTTPError(message));
       }
     );
@@ -109,20 +111,20 @@ export class BaseClient {
             error.response?.data?.message || error.message || 'Unknown error';
 
           if (status === 404) {
-            console.warn(`[404] Not Found: ${url}`);
+            this.logger.warn(`[404] Not Found: ${url}`);
           } else if (status >= 500) {
-            console.error(`[${status}] Server Error: ${url}`);
+            this.logger.error(`[${status}] Server Error: ${url}`);
           } else if (status > 0) {
-            console.warn(`[${status}] ${method} ${url}: ${message}`);
+            this.logger.warn(`[${status}] ${method} ${url}: ${message}`);
           } else {
-            console.error(`[Network] Request failed: ${message}`);
+            this.logger.error(`[Network] Request failed: ${message}`);
           }
 
           throw new HTTPError(message, status || undefined, method, url);
         }
 
         const message = this.getErrorMessage(error);
-        console.error('[Unexpected Error]', message);
+        this.logger.error('[Unexpected Error]', message);
         throw new Error(message);
       }
     );

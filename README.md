@@ -33,6 +33,26 @@ const client = new AriClient({
     secure: false          // Use true for HTTPS/WSS
 });
 ```
+### Custom Logging
+
+You can inject your own logger implementing the `Logger` interface. When omitted, the client uses `console` by default.
+
+```typescript
+const logger = {
+  log: (...args: unknown[]) => console.log("[custom]", ...args),
+  warn: (...args: unknown[]) => console.warn("[custom]", ...args),
+  error: (...args: unknown[]) => console.error("[custom]", ...args)
+};
+
+const client = new AriClient({
+  host: "localhost",
+  port: 8088,
+  username: "user",
+  password: "pass",
+  logger,
+});
+```
+
 
 ### WebSocket Connection
 
