@@ -73,7 +73,7 @@ export class AriClient {
       config.username,
       config.password,
       undefined,
-      this.logger,
+      this.logger
     );
 
     // Initialize resource handlers
@@ -173,7 +173,7 @@ export class AriClient {
         apps,
         subscribedEvents,
         this,
-        this.logger,
+        this.logger
       );
 
       await this.webSocketClient.connect();
@@ -255,7 +255,7 @@ export class AriClient {
   public on<T extends WebSocketEvent['type']>(
     event: T,
     listener: TypedWebSocketEventListener<T>
-  ): void {
+  ): this {
     if (!this.webSocketClient) {
       throw new Error('WebSocket is not connected');
     }
@@ -263,8 +263,10 @@ export class AriClient {
     // 🔹 Verifica se o listener já está registrado para evitar duplicação
     const existingListeners = this.eventListeners.get(event) || [];
     if (existingListeners.includes(listener as WebSocketEventListener)) {
-      this.logger.warn(`Listener already registered for event ${event}, reusing.`);
-      return;
+      this.logger.warn(
+        `Listener already registered for event ${event}, reusing.`
+      );
+      return this;
     }
 
     // Conectar o listener diretamente
@@ -275,6 +277,7 @@ export class AriClient {
     this.eventListeners.set(event, existingListeners);
 
     this.logger.log(`Event listener successfully registered for ${event}`);
+    return this;
   }
 
   /**
@@ -287,7 +290,7 @@ export class AriClient {
   public once<T extends WebSocketEvent['type']>(
     event: T,
     listener: TypedWebSocketEventListener<T>
-  ): void {
+  ): this {
     if (!this.webSocketClient) {
       throw new Error('WebSocket is not connected');
     }
@@ -298,7 +301,7 @@ export class AriClient {
       this.logger.warn(
         `One-time listener already registered for event ${event}, reusing.`
       );
-      return;
+      return this;
     }
 
     const wrappedListener = (data: Extract<WebSocketEvent, { type: T }>) => {
@@ -313,6 +316,7 @@ export class AriClient {
     ]);
 
     this.logger.log(`One-time event listener registered for ${event}`);
+    return this;
   }
 
   /**
@@ -324,10 +328,10 @@ export class AriClient {
   public off<T extends WebSocketEvent['type']>(
     event: T,
     listener: TypedWebSocketEventListener<T>
-  ): void {
+  ): this {
     if (!this.webSocketClient) {
       this.logger.warn('No WebSocket connection to remove listener from');
-      return;
+      return this;
     }
 
     this.webSocketClient.off(event, listener);
@@ -340,6 +344,7 @@ export class AriClient {
     );
 
     this.logger.log(`Event listener removed for ${event}`);
+    return this;
   }
 
   /**
@@ -353,7 +358,9 @@ export class AriClient {
         return;
       }
 
-      this.logger.log('Closing WebSocket connection and cleaning up listeners.');
+      this.logger.log(
+        'Closing WebSocket connection and cleaning up listeners.'
+      );
 
       const closeTimeout = setTimeout(() => {
         if (this.webSocketClient) {

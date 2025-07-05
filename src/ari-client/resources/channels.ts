@@ -63,7 +63,7 @@ export class ChannelInstance {
   on<T extends WebSocketEvent['type']>(
     event: T,
     listener: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -74,7 +74,7 @@ export class ChannelInstance {
       this.client.logger.warn(
         `Listener já registrado para evento ${event}, reutilizando.`
       );
-      return;
+      return this;
     }
 
     const wrappedListener = (data: WebSocketEvent) => {
@@ -92,6 +92,7 @@ export class ChannelInstance {
     this.listenersMap
       .get(event)!
       .push(wrappedListener as (...args: any[]) => void);
+    return this;
   }
 
   /**
@@ -100,7 +101,7 @@ export class ChannelInstance {
   once<T extends WebSocketEvent['type']>(
     event: T,
     listener: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -113,7 +114,7 @@ export class ChannelInstance {
       this.client.logger.warn(
         `One-time listener já registrado para evento ${eventKey}, reutilizando.`
       );
-      return;
+      return this;
     }
 
     const wrappedListener = (data: WebSocketEvent) => {
@@ -135,6 +136,7 @@ export class ChannelInstance {
       .get(eventKey)!
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .push(wrappedListener as (...args: any[]) => void);
+    return this;
   }
 
   /**
@@ -149,7 +151,7 @@ export class ChannelInstance {
   off<T extends WebSocketEvent['type']>(
     event: T,
     listener?: (data: Extract<WebSocketEvent, { type: T }>) => void
-  ): void {
+  ): this {
     if (!event) {
       throw new Error('Event type is required');
     }
@@ -165,6 +167,7 @@ export class ChannelInstance {
       this.eventEmitter.removeAllListeners(event);
       this.listenersMap.delete(event);
     }
+    return this;
   }
 
   /**
@@ -204,7 +207,9 @@ export class ChannelInstance {
    * @return {void} This method does not return a value.
    */
   removeAllListeners(): void {
-    this.client.logger.log(`Removing all event listeners for channel ${this.id}`);
+    this.client.logger.log(
+      `Removing all event listeners for channel ${this.id}`
+    );
 
     this.listenersMap.forEach((listeners, event) => {
       listeners.forEach((listener) => {
@@ -314,7 +319,10 @@ export class ChannelInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.error(`Error snooping on channel ${this.id}:`, message);
+      this.client.logger.error(
+        `Error snooping on channel ${this.id}:`,
+        message
+      );
       throw new Error(`Failed to snoop channel: ${message}`);
     }
   }
@@ -339,7 +347,10 @@ export class ChannelInstance {
       );
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.error(`Error snooping with ID on channel ${this.id}:`, message);
+      this.client.logger.error(
+        `Error snooping with ID on channel ${this.id}:`,
+        message
+      );
       throw new Error(`Failed to snoop channel with ID: ${message}`);
     }
   }
@@ -369,7 +380,10 @@ export class ChannelInstance {
       return playback;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.error(`Error playing media on channel ${this.id}:`, message);
+      this.client.logger.error(
+        `Error playing media on channel ${this.id}:`,
+        message
+      );
       throw new Error(`Failed to play media: ${message}`);
     }
   }
@@ -680,7 +694,10 @@ export class Channels {
       return this.channelInstances.get(id)!;
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.error(`Error creating/retrieving channel instance:`, message);
+      this.client.logger.error(
+        `Error creating/retrieving channel instance:`,
+        message
+      );
       throw new Error(`Failed to manage channel instance: ${message}`);
     }
   }
@@ -708,16 +725,23 @@ export class Channels {
         if (instance) {
           instance.cleanup(); // Usar o novo método cleanup
           this.channelInstances.delete(channelId);
-          this.client.logger.log(`Channel instance ${channelId} removed and cleaned up`);
+          this.client.logger.log(
+            `Channel instance ${channelId} removed and cleaned up`
+          );
         }
       } catch (error) {
-        this.client.logger.error(`Error cleaning up channel ${channelId}:`, error);
+        this.client.logger.error(
+          `Error cleaning up channel ${channelId}:`,
+          error
+        );
       }
     }
 
     // Garantir que o map está vazio
     this.channelInstances.clear();
-    this.client.logger.log('All channel instances have been removed and cleaned up');
+    this.client.logger.log(
+      'All channel instances have been removed and cleaned up'
+    );
   }
 
   /**
@@ -736,7 +760,10 @@ export class Channels {
       return await this.baseClient.get<Channel>(`/channels/${id}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      this.client.logger.error(`Error retrieving channel details for ${id}:`, message);
+      this.client.logger.error(
+        `Error retrieving channel details for ${id}:`,
+        message
+      );
       throw new Error(`Failed to get channel details: ${message}`);
     }
   }
@@ -754,13 +781,20 @@ export class Channels {
       try {
         instance.cleanup();
         this.channelInstances.delete(channelId);
-        this.client.logger.log(`Channel instance ${channelId} removed from memory`);
+        this.client.logger.log(
+          `Channel instance ${channelId} removed from memory`
+        );
       } catch (error) {
-        this.client.logger.error(`Error removing channel instance ${channelId}:`, error);
+        this.client.logger.error(
+          `Error removing channel instance ${channelId}:`,
+          error
+        );
         throw error;
       }
     } else {
-      this.client.logger.warn(`Attempt to remove non-existent instance: ${channelId}`);
+      this.client.logger.warn(
+        `Attempt to remove non-existent instance: ${channelId}`
+      );
     }
   }
 
